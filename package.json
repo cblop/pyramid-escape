@@ -1,0 +1,18 @@
+{
+  "name": "pyramid-escape",
+  "version": "0.0.1",
+  "private": true,
+  "devDependencies": {
+    "shadow-cljs": "2.7.3"
+  },
+  "scripts": {
+    "release": "shadow-cljs release app && cp ./public/js/main.js ../docs/pyramid_escape/js/main.js && cp ./public/index.html ../docs/pyramid_escape/index.html"
+  },
+  "dependencies": {
+    "create-react-class": "^15.6.3",
+    "howler": "^2.2.1",
+    "react": "^16.5.2",
+    "react-dom": "^16.5.2",
+    "three": "^0.102.1"
+  }
+}
