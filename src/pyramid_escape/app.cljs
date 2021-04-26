@@ -27,6 +27,7 @@
 (def show-info? (r/atom true))
 (def dead? (r/atom false))
 (def restart? (r/atom false))
+(def escaped? (r/atom false))
 
 (defn vec-remove
   "remove elem in coll"
@@ -58,28 +59,31 @@
 
 ; left, middle, bottom, right
 (def door-map
-  [[:---- :---- :---- :---- :----]
-   [:---- :---- :---- :---- :----]
-   [:---- :---- :---- :---- :----]
-   [:--x- :---- :--x- :---- :----]
-   [:-x-x :x--x :xx-x :x--x :----]])
+  [[:--x- :--xx :x-xx :x--x :x-x-]
+   [:-xxx :xxx- :-x-x :x-x- :-xx-]
+   [:-x-x :xxxx :x-x- :-xxx :xx--]
+   [:---- :-x-x :xxxx :xxx- :--x-]
+   [:--x- :---- :-xx- :-xxx :xx--]
+   [:-x-x :x--x :xx-x :xx-x :x---]])
 
 ; left, middle, right
 (def lamp-map
   (atom
-   [[:--- :--- :--- :--- :---]
-    [:--- :--- :--- :--- :---]
-    [:--- :--- :--- :--- :---]
-    [:-l- :--- :-l- :--- :---]
-    [:l-- :--- :--- :--- :---]]))
+   [[:--- :-l- :--- :--- :---]
+    [:--- :--- :l-- :--- :---]
+    [:--- :--- :--- :l-- :---]
+    [:--- :l-- :--- :--l :---]
+    [:--- :--- :--l :--- :---]
+    [:l-- :--- :--- :--- :-l-]]))
 
 ; left, middle, right
 (def stick-map
-  (atom [[:--- :--- :--- :--- :---]
-         [:--- :--- :--- :--- :---]
-         [:--- :--- :--- :--- :---]
-         [:--- :--- :--- :--- :---]
-         [:--x :-x- :--- :--- :---]]))
+  (atom [[:--- :--- :-x- :--- :-x-]
+         [:--- :--- :-xx :--- :--x]
+         [:--- :x-- :--- :-x- :---]
+         [:--- :--- :--- :-x- :---]
+         [:x-- :--- :x-x :--- :--x]
+         [:--x :--- :-x- :--- :---]]))
 
 (defn- placement->index
   [type placement]
@@ -159,15 +163,16 @@
                    (= "x" (nth (vec (name (get-in door-map (:room @state)))) (placement->index :door direction)))
                    (get-in door-map (:room (update-in @state [:room index] f))))
               (swap! state update-in [:room index] f)
+              (decrement-burns-left)
               (load-room)))]
     (case direction
       :left (move 1 dec)
       :middle (move 0 dec)
       :bottom (move 0 inc)
       :right (move 1 inc)))
-  (decrement-burns-left)
-  (when (empty? (filter :lit? (concat (:inventory @state) (:sticks @state) (:lamps @state))))
-    (die!)))
+  (if (= (:room @state) [0 0]) (reset! escaped? true)
+      (when (empty? (filter :lit? (concat (:inventory @state) (:sticks @state) (:lamps @state))))
+        (die!))))
 
 (defn walls []
   [:object {:position [0 0 -10]
@@ -368,8 +373,8 @@
   (let [stick-index (selected-stick-index)
         selected-stick (nth (:inventory @state) stick-index)]
     (cond
-      (:lit? selected-stick) (do (light-item :lamps placement)
-                                 (swap! state assoc-in [:inventory stick-index :selected?] false))
+      ;; (:lit? selected-stick) (do (light-item :lamps placement)
+      ;;                            (swap! state assoc-in [:inventory stick-index :selected?] false))
       (:lit? (get-item :lamps placement)) (light-inv-stick stick-index))))
 
 (defn- on-mouse-down [evt]
@@ -434,7 +439,7 @@
   (let [scene-context (th/render [root]
                                  (.getElementById js/document "root"))]
     (swap! state assoc
-           :room [4 0]
+           :room [5 0]
            :inventory [])
     (load-room)
     (swap! state assoc :scene-context scene-context)
@@ -444,6 +449,11 @@
 
 (defn- ui-root []
   [:div
+   (when @escaped?
+     [:div
+      [:img {:src "img/desert.png"}]
+      [:div#message
+       [:p "Congratulations, you have escaped!"]]])
    (when @show-info?
      [:div#explanation {:on-click #(reset! show-info? false)}
       [:p "You find yourself underneath an ancient Egyptian pyramid."]
@@ -459,6 +469,7 @@
 
 (defn init []
   (set! *canvas-element* (.getElementById js/document "root"))
+  ;; (set! (.-width *canvas-element*) (* (.-height *canvas-element*) 1.6))
   (th/render [root] (.getElementById js/document "root"))
   (doto (.getElementById js/document "root")
     (.addEventListener "mousedown" on-mouse-down false))
@@ -469,6 +480,7 @@
   (reset! show-info? true)
   (reset! dead? false)
   (reset! restart? false)
+  (reset! escaped? false)
   (load-scene!))
 
 

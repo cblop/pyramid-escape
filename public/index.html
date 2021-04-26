@@ -8,7 +8,13 @@
 							margin:0;
 							padding:0;
 							overflow-y:hidden;
+              background-color:black;
+              text-align: center;
 					}
+         #root {
+             height: 100vh;
+             width: 156.25vh; /* height:width ratio = 9/16 = .5625  */
+         }
 					#ui-root {
 							width:100%;
 							font-size:36px;
@@ -17,6 +23,7 @@
 							left:0;
 							margin:auto;
 							color:white;
+              background-color:black;
 					}
 
          #explanation {
@@ -57,7 +64,7 @@
     <body>
 			<div id="ui-root">
 			</div>
-				<canvas id="root" style="width:100vw;height:100vh"></canvas>
+				<canvas id="root"></canvas>
         <script src="js/main.js"></script>
         <!-- <script src="build/three.min.js"></script> -->
         <!-- <script type="module" src="js/Lensflare.js"></script> -->
